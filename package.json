@@ -1,0 +1,19 @@
+{
+  "name": "kulki",
+  "version": "1.0.0",
+  "description": "old polish game from 1995, school project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "kulki"
+  },
+  "keywords": [
+    "kulki",
+    "game"
+  ],
+  "author": "zuzozuo",
+  "license": "ISC"
+}
