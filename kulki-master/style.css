@@ -18,6 +18,17 @@
   vertical-align: left;
 }*/
 
+.end{
+  display: block;
+  position: absolute;
+  width: 300px;
+  height: 200px;
+  border: 2px dashed black;
+  font-size: 50px;
+  top: 0;
+  right: 0;
+}
+
 
 .circle{
   width: 45px;
