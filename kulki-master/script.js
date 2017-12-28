@@ -2,22 +2,22 @@ document.addEventListener("DOMContentLoaded", function() {
   var EMPTY_CELL = 0, //puste komórki
     CIRCLE_CELL = 1, //komórki w których  jest kulka
     mainDiv = document.createElement("div"),
-    boardRows = 9,
-    boardCols = 9,
-    randomCell = 0,
-    boardCells,
-    colors,
-    circleColor,
-    posStart,
-    posEnd,
-    place,
-    selected = false,
-    turn = false,
-    circleToCopy //to jest moje kółkko do kopiowania;
-    //----------------------------------------------------
+    boardRows = 9, //wiersze
+    boardCols = 9, //kolumny
+    randomCell = 0, //losowa komórka
+    boardCells, //tablica ze wszystkimi komórkami
+    colors, //tablica z kolorami
+    circleColor, //wylosowany kolor dla kółka
+    posStart, //pozycja startu
+    posEnd, //pozycja końca
+    place, //miejsce wylosowane dla  kulki
+    selected = false, //flaga wybranej kulki
+    turn = false, //flaga ruchu
+    found = false, //flaga odnalezionej ścieżki
+    circleToCopy; //to jest moje kółko do kopiowania;
+  //----------------------------------------------------
 
   //--------- Tworzenie planszy -----------
-
   function createBoard() {
     var x, y, cell, row, nr;
     nr = 0; //numer komórki
@@ -87,35 +87,37 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // -------- Kliknieto -------------
   function clickCell() {
-    var nr = parseInt(this.dataset.nr)
-    var cellMode = this.dataset.type;
+    var nr = parseInt(this.dataset.nr),
+      cellMode = this.dataset.type;
 
-    console.log(this.dataset.type)
-
-    if (selected == false && cellMode == CIRCLE_CELL) {
-      clearVisible();
+    if (cellMode == CIRCLE_CELL) {
       this.firstChild.className = "selected";
-      circleToCopy = this.firstChild;
-      posStart = nr;
-      selected = true;
-      turn = false;
-      this.dataset.type = EMPTY_CELL;
-    } else if (selected == true && cellMode == EMPTY_CELL) {
+      if (selected == false) {
+        posStart = nr;
+        circleToCopy = this.firstChild;
+        selected = true;
+        clearVisible();
+        this.dataset.type = EMPTY_CELL;
+      } else {
+        this.firstChild.className = "circle";
+      }
+    } else if (cellMode == EMPTY_CELL && selected == true) {
       posEnd = nr;
-      console.log(posStart, posEnd);
       findTheShortestPath(posStart, posEnd);
-      checkTurn(posStart, posEnd); //sprawdza czy wykonano ruch
-      this.appendChild(circleToCopy); // to do zmienienia, bo dodaje się nawet po tym jak nie znajdzie ścieżki,
-      //zatem jeżeli znajdzie ścieżke,to  ma się dodawać jesli nie to nie
-      circleToCopy.className = "circle";
-      this.dataset.type = CIRCLE_CELL;
-      selected = false;
+      if (found == true) {
+        this.appendChild(circleToCopy);
+        this.firstChild.className = "circle";
+        selected = false;
+        this.dataset.type = CIRCLE_CELL;
+        checkTurn(posStart, posEnd);
+      }
+    } else {
+      return;
     }
   }
 
-  //---------sprawdź ruch--------------
   function checkTurn(start, end) {
-    if (start == end) {
+    if (start == end || found == false) {
       return;
     } else if (start != end) {
       turn = true;
@@ -124,35 +126,38 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
+
   //------Dodaj kulki po ruchu----------
   function addAfterTurn() {
     var i;
     for (i = 0; i < 3; i++) {
       addCircle();
     }
+    checkBoard();
   }
 
   //--------Szukaj sąsiadów----------------
 
-  function findNeighbours(pos) {
-    var x = boardCells[pos].dataset.x,
-      y = boardCells[pos].dataset.y,
+  function findNeighbours(current) {
+    var x = boardCells[current].dataset.x,
+      y = boardCells[current].dataset.y,
       neighbours = [];
 
+    //sprawdzenie kierunku w lewo
     if (x > 0) {
-      neighbours.push(pos - 1);
+      neighbours.push(current - 1);
     }
-
+    //kierunek w prawo
     if (x < boardCols - 1) {
-      neighbours.push(pos + 1);
+      neighbours.push(current + 1);
     }
-
+    //kierunek w górę
     if (y > 0) {
-      neighbours.push(pos - boardCols);
+      neighbours.push(current - boardCols);
     }
-
+    //kierunek w dół
     if (y < boardRows - 1) {
-      neighbours.push(pos + boardCols);
+      neighbours.push(current + boardCols);
     }
 
     return neighbours;
@@ -160,10 +165,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
   //---------- Szukaj najkrótszej ścieżki----------
   function findTheShortestPath(start, end) {
-    var current, neighbours, check, path, i,
-      track = [],
-      backtrack = [],
-      visited = [];
+    var current, //komórka w której aktualnie się znajdujemy
+      neighbours, //tablica z sąsiadami komórki
+      check, //zmienna pomocnicza, do sprawdzania flagi odwiedzonych
+      path, //tablica, która zwróci nam całą ścieżkę
+      i,
+      track = [], //tablica początkowa ze ścieżką
+      backtrack = [], //tablica   z historią ścieżki
+      visited = []; //tablica z flagami odwiedzonych komórek
 
     //ustawiamy kulkom flagi odwiedzonych, aby nie sprawdzać ścieżki w tych polach
     for (i = 0; i < boardCells.length; i++) {
@@ -178,48 +187,49 @@ document.addEventListener("DOMContentLoaded", function() {
       backtrack.push(-1);
     } // inicjalizacja tablicy do której bedzie wpisywana ściezka powrotna
 
-    track = [start] //ustawienie pozycji starowej ścieżki
+    track = [start] //ustawienie  1 pozycji w tablicy ze ścieżką
 
-    while (track.length > 0) {
-      current = track.shift();
-
+    while (track.length > 0) { //jest to pętla po kolejce pól do sprawdzenia
+      current = track.shift(); //pobranie aktualnej komórki z pozycją z tablicy ścieżki
       if (current == end) {
         break;
       }
 
-      /*if (current != start) {
-        boardCells[current].style.backgroundColor = 'pink';
-      }*/ //kwestia estetyki
+      neighbours = findNeighbours(current); //szukanie i wpisanie do tablicy sąsiadów aktualnej komórki
 
-      neighbours = findNeighbours(current);
-
-      for (i = 0; i < neighbours.length; i++) {
-        check = neighbours[i];
-        if (visited[check] == false) {
-          visited[check] = true;
-          backtrack[check] = current;
-          track.push(check);
+      for (i = 0; i < neighbours.length; i++) { //pętla wykonuje się dla każdego sąsiada
+        check = neighbours[i]; //zmienna pomocnicza do której przypisujemy naszego sąsiada
+        if (visited[check] == false) { //pętla, która sprawdza czy aktualne pole nie było jeszcze odwiedzone
+          visited[check] = true; //jeżeli nie było, to teraz już jest i ustawiamy flagę odwiedzenia pola
+          backtrack[check] = current; //zapamiętujemy z którego pola tu trafiliśmy
+          track.push(check); //dodajemy pole do listy do sprawdzenia
         }
       }
+
     }
 
-    if (current == end) {
-      path = [end];
+    if (current == end) { //czy aktualne pole na którym się znajdujemy jest równe naszemu celowi?
+      found = true;
+      path = [end]; //zaczynamy odtwarzać ścieżkę od końca do początku
       current = end;
       while (current != start) {
         current = backtrack[current];
         path.unshift(current);
       }
 
-      if (path.length > 2) {
+      if (path.length > 1) { //gotowa ścieżka, kolorowanie jej
         for (i = 0; i < path.length - 1; i++) {
           boardCells[path[i]].style.backgroundColor = "lightpink";
         }
       }
+    } else { //jeżeli nie dotrzemy do końca, nie znajdziemy drogi końca
+      console.log("Nie znaleziono ściezki");
+      found = false;
+
     }
   }
 
-  //------Czyszczenie kolorków!-------
+  //------Czyszczenie kolorków!-------------
 
   function clearVisible() {
     var i;
@@ -227,6 +237,26 @@ document.addEventListener("DOMContentLoaded", function() {
       if (boardCells[i].style.backgroundColor == "lightpink") {
         boardCells[i].style.backgroundColor = "white";
       }
+    }
+  }
+
+  //----Sprawdzenie czy plansza jest zapełniona-------
+
+  function checkBoard() {
+    var circleCells = [],
+      i;
+
+    for (i = 0; i < boardCells.length; i++) {
+      if (boardCells[i].dataset.type == CIRCLE_CELL) {
+        circleCells.push(boardCells[i]);
+      }
+    }
+
+    if (boardCells.length == circleCells.length) {
+      var gameEnd = document.createElement('div');
+      document.body.appendChild(gameEnd);
+      gameEnd.className = "end";
+      gameEnd.innerHTML = "Koniec gry";
     }
   }
   //-----------------------------
