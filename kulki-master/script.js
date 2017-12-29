@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", function() {
   var EMPTY_CELL = 0, //puste komórki
     CIRCLE_CELL = 1, //komórki w których  jest kulka
     mainDiv = document.createElement("div"),
+    boxDiv = document.createElement("div"),
     boardRows = 9, //wiersze
     boardCols = 9, //kolumny
     randomCell = 0, //losowa komórka
@@ -14,6 +15,8 @@ document.addEventListener("DOMContentLoaded", function() {
     selected = false, //flaga wybranej kulki
     turn = false, //flaga ruchu
     found = false, //flaga odnalezionej ścieżki
+    nextCircleColors = [],
+    inbox = [],
     circleToCopy; //to jest moje kółko do kopiowania;
   //----------------------------------------------------
 
@@ -44,10 +47,78 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
+  //----Tworzenie pudełka z następnymi kolorami----------
+  function createBox() {
+    var i;
+    document.body.appendChild(boxDiv);
+    boxDiv.className = "box"
+    boxDiv.innerHTML = "<p> Następne kolorki: </p>";
+    for (i = 0; i < 3; i++) {
+      var inboxCircle = document.createElement('div');
+      boxDiv.appendChild(inboxCircle);
+      inboxCircle.className = "inbox";
+      inbox.push(inboxCircle);
+    }
+
+  }
+
+  //---Tworzenie tablicy z następnymi kolorami-----
+  function nextColors() {
+    var nextCircles = [],
+      i;
+    for (i = 0; i < 3; i++) {
+      drawColor();
+      nextCircles.push(circleColor);
+    }
+    return nextCircles;
+  }
+
+  //---dodanie następnych kółek i kolorów do pudełka ---
+  function addToBox() {
+    var i, color, nextCircles;
+    nextCircles = nextColors();
+    for (i = 0; i < 3; i++) {
+      color = nextCircles.shift();
+      inbox[i].style.backgroundColor = color;
+      nextCircleColors.push(color);
+    }
+  }
+
+  // -------Podmiana kolorów -----------s
+
+
+  //---------Dodanie kulki na planszę po ruchu-----------
+  function addCircles() {
+    var i, nextColor;
+    for (i = 0; i < 3; i++) {
+      var circleDiv = document.createElement('div');
+      circleDiv.className = 'circle';
+      nextColor = nextCircleColors.shift();
+      drawPlace();
+      place.appendChild(circleDiv);
+      circleDiv.style.backgroundColor = nextColor;
+    }
+  }
+
+  //------Dodanie kulek pierwszy raz------
+  function addCirclesFirstTime() {
+    var i;
+    for (i = 0; i < 3; i++) {
+      var circleDiv = document.createElement('div');
+      circleDiv.className = 'circle';
+      drawPlace();
+      place.appendChild(circleDiv);
+      drawColor();
+      circleDiv.style.backgroundColor = circleColor;
+    }
+  }
+
   //-----------losowanie koloru-------------
   function drawColor() {
     var randomColor;
-    colors = ['#ff6666', '#cc99ff', '#66d9ff', '#66ff66', '#ffff66'];
+    colors = ['#70684E', '#705F2C', '#5968B2', '#801515', '#BDB638',
+      '#804515', '#0D4D4D'
+    ];
     randomColor = Math.floor((Math.random() * colors.length));
     circleColor = colors[randomColor];
   }
@@ -60,18 +131,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     boardCells[randomCell].dataset.type = CIRCLE_CELL;
     place = boardCells[randomCell];
-    //console.log(place);
   }
 
-  //---------Dodanie kulki-----------
-  function addCircle() {
-    var circleDiv = document.createElement('div');
-    circleDiv.className = 'circle';
-    drawPlace();
-    place.appendChild(circleDiv);
-    drawColor();
-    circleDiv.style.backgroundColor = circleColor;
-  }
+
   //---------Reset i przygotowanie planszy do gry ------------
 
   function resetBoard() {
@@ -79,10 +141,7 @@ document.addEventListener("DOMContentLoaded", function() {
       boardCells[i].dataset.type = EMPTY_CELL;
       boardCells[i].innerHTML = '';
     }
-
-    for (var j = 0; j < 3; j++) {
-      addCircle();
-    } //dodanie 3 kulek
+    addCirclesFirstTime(); //dodanie 3 kulek
   }
 
   // -------- Kliknieto -------------
@@ -129,10 +188,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
   //------Dodaj kulki po ruchu----------
   function addAfterTurn() {
-    var i;
-    for (i = 0; i < 3; i++) {
-      addCircle();
-    }
+    addToBox();
+    addCircles();
     checkBoard();
   }
 
@@ -219,7 +276,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
       if (path.length > 1) { //gotowa ścieżka, kolorowanie jej
         for (i = 0; i < path.length - 1; i++) {
-          boardCells[path[i]].style.backgroundColor = "lightpink";
+          boardCells[path[i]].style.backgroundColor = "#D95A4E";
         }
       }
     } else { //jeżeli nie dotrzemy do końca, nie znajdziemy drogi końca
@@ -234,8 +291,8 @@ document.addEventListener("DOMContentLoaded", function() {
   function clearVisible() {
     var i;
     for (i = 0; i < boardCells.length; i++) {
-      if (boardCells[i].style.backgroundColor == "lightpink") {
-        boardCells[i].style.backgroundColor = "white";
+      if (boardCells[i].style.backgroundColor != "white") {
+        boardCells[i].style.backgroundColor = "#F0CC5F";
       }
     }
   }
@@ -263,5 +320,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   //----wywołanie funkcji ------
   createBoard();
+  createBox();
+  addToBox();
   resetBoard();
 });
